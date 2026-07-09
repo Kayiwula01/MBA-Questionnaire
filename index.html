@@ -265,7 +265,7 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
     The questionnaire has <strong>6 sections</strong> and takes approximately
     <strong>10–12 minutes</strong> to complete. There are no right or wrong answers — please respond
     honestly based on your genuine perceptions and experiences.
-    Contact: <strong>danielkayiwula88@gmail.com | 0207111686</strong></p>
+    Contact: <strong> danielkayiwula88@gmail.com | 0207111686</strong></p>
   </div>
 
   <!-- CONSENT -->
@@ -1169,7 +1169,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ── SUBMIT ─────────────────────────────────────────────────────────────────
   // Replace this URL with your deployed Google Apps Script Web App URL
-  var GOOGLE_SCRIPT_URL = https://script.google.com/macros/s/AKfycbxduPpFTLr4VXFRCelyxneQPfEHH7yaPqpVHL64JvCEf_O1RpwN3FVFzd7lvruELNZ-/exec
+  var GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxN8knUOb9EyILr840RjqciFlNwX6WzMaZj_v9jFv4pCKRgbQVMb5cK5knvk2cxG5Nw/exec'
+
   function submitForm() {
     if (!validateSection(currentSection)) return;
 
@@ -1180,41 +1181,25 @@ document.addEventListener('DOMContentLoaded', function() {
     var refId = 'XWF-' + Date.now().toString(36).toUpperCase();
     data['response_id'] = refId;
 
-    // ── FIX: encode as URL-encoded string so Google Apps Script
-    //   e.parameter correctly receives every field.
-    //   FormData multipart is NOT supported by Apps Script doPost(e).
-    var encoded = Object.keys(data).map(function(k) {
-      return encodeURIComponent(k) + '=' + encodeURIComponent(data[k] || '');
-    }).join('&');
+    var formData = new FormData();
+    Object.keys(data).forEach(function(k) { formData.append(k, data[k]); });
 
-    // ── Primary method: fetch with no-cors + url-encoded body ──────────────
-    fetch(GOOGLE_SCRIPT_URL, {
-      method : 'POST',
-      mode   : 'no-cors',          // required for cross-origin Apps Script
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body   : encoded
-    })
-    .then(function() {
-      showSuccess(refId);
-    })
-    .catch(function() {
-      // ── Fallback: image-ping GET request (works even when fetch blocked) ─
-      var img = new Image();
-      img.onload = img.onerror = function() { showSuccess(refId); };
-      img.src = GOOGLE_SCRIPT_URL + '?' + encoded + '&_t=' + Date.now();
-    });
-  }
-
-  function showSuccess(refId) {
-    var overlay = document.getElementById('loading-overlay');
-    overlay.classList.remove('active');
-    document.querySelector('.wrapper').querySelectorAll(
-      '.section, .info-box, .consent-box, .progress-bar-wrap, .q-header'
-    ).forEach(function(el) { el.style.display = 'none'; });
-    var sp = document.getElementById('success-page');
-    sp.style.display = 'block';
-    document.getElementById('response-id').textContent = 'Response ID: ' + refId;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: formData, mode: 'no-cors' })
+      .then(function() {
+        overlay.classList.remove('active');
+        // Hide all questionnaire panels
+        document.querySelector('.wrapper').querySelectorAll(
+          '.section, .info-box, .consent-box, .progress-bar-wrap, .q-header'
+        ).forEach(function(el) { el.style.display = 'none'; });
+        var sp = document.getElementById('success-page');
+        sp.style.display = 'block';
+        document.getElementById('response-id').textContent = 'Response ID: ' + refId;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      })
+      .catch(function(err) {
+        overlay.classList.remove('active');
+        alert('Submission error. Please check your internet connection and try again.\n\nIf the problem persists, please contact the researcher directly.');
+      });
   }
 
   // Initialise progress bar
